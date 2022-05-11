@@ -19,6 +19,7 @@
 const multiC = require('multicodec');
 const multiH = require('multihashes');
 
+
 const { hexStringToBuffer, profiles } = require('./profiles');
 const { cidForWeb, cidV0ToV1Base32 } = require('./helpers');
 
@@ -85,10 +86,14 @@ module.exports = {
   * @param {string} codec 
   * @param {string} value 
   */
-	encode: function (codec, value) {
+	encode: function (codec_, value) {
+		let codec = codec_;
 		let profile = profiles[codec];
 		if (!profile) profile = profiles['default'];
 		const encodedValue = profile.encode(value);
+		if (codec === 'ipns-dns') {
+			codec = 'ipns-ns';
+		};
 		return multiH.toHexString(multiC.addPrefix(codec, encodedValue))
 	},
 
