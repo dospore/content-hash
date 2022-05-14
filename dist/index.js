@@ -8371,7 +8371,6 @@ module.exports = {
 		const buffer = hexStringToBuffer(contentHash);
 		const codec = multiC.getCodec(buffer);
 		const value = multiC.rmPrefix(buffer);
-		console.log(`codec: ${codec}, value: ${value}`)
 		let profile = profiles[codec];
 		if (!profile) profile = profiles['default'];
 		return profile.decode(value);
@@ -8421,10 +8420,8 @@ module.exports = {
 	encode: function (codec_, value) {
 		let codec = codec_;
 		let profile = profiles[codec];
-		console.log('profile', codec, profile);
 		if (!profile) profile = profiles['default'];
 		const encodedValue = profile.encode(value);
-		console.log(encodedValue, 'encoded woooo')
 		if (codec === 'ipns-dns') {
 			codec = 'ipns-ns';
 		};
@@ -8487,13 +8484,11 @@ const hexStringToBuffer = (hex) => {
 const isCryptographicIPNS =  (cid) => {
   try {
     const { multihash } = cid
-    console.log('ipns-ns id:', String(multiH.decode(cid.multihash).digest), multihash.length)
     // Additional check for identifiers shorter
     // than what inlined ED25519 pubkey would be
     // https://github.com/ensdomains/ens-app/issues/849#issuecomment-777088950
     if (multihash.length < 38) {
       const mh = multiH.decode(multihash)
-      console.log(mh);
       // ED25519 pubkeys are inlined using identity hash function
       // and we should not see anything shorter than that
       if (mh.name === 'identity' && mh.length < 36) {
@@ -8504,6 +8499,19 @@ const isCryptographicIPNS =  (cid) => {
     // ok, CID looks fine
     return true
   } catch (_) { return false }
+}
+
+/**
+ * Validates IPNS identifier to domain
+ * @param {value} domain name used
+ * @return {bool}
+ */
+const isDomainIPNS = (value) => {
+  let regEx = /[a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+/
+  if (value.search(regEx) === -1) {
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -8532,9 +8540,7 @@ const encodes = {
   * @return {Buffer}
   */
   ipns: (value) => {
-    console.log('encoding 2', value);
     const cid = new CID(value)
-    console.log("cid", cid);
     if (!isCryptographicIPNS(cid)) {
         throw Error('ipns-ns allows only valid cryptographic libp2p-key identifiers, try using ED25519 pubkey instead')
     }
@@ -8543,8 +8549,10 @@ const encodes = {
     return new CID(1, 'libp2p-key', cid.multihash).bytes
   },
   ipnsdns: (value) => {
-    console.log('encoding', value);
     const multihash = multiH.encode(Buffer.from(value, 'utf8'), 'identity');
+    if (!isDomainIPNS(value)) {
+      throw Error('ipns-ns only supports valid domains of the form {name}.{topLevelDomain}')
+    }
     return new CID(1, 'dag-pb', multihash).bytes;
   },
   /**
@@ -8597,7 +8605,6 @@ const decodes = {
     const cid = new CID(value).toV1();
     if (!isCryptographicIPNS(cid)) {
         // Value is not a libp2p-key, return original string
-        console.log('cid v2', new CID(value))
         console.warn('[ensdomains/content-hash] use of non-cryptographic identifiers in ipns-ns is deprecated and will be removed, migrate to ED25519 libp2p-key')
         return String(multiH.decode(new CID(value).multihash).digest)
         // TODO: start throwing an error (after some deprecation period)

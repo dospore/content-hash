@@ -59,6 +59,19 @@ const isCryptographicIPNS =  (cid) => {
 }
 
 /**
+ * Validates IPNS identifier to domain
+ * @param {value} domain name used
+ * @return {bool}
+ */
+const isDomainIPNS = (value) => {
+  let regEx = /[a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+/
+  if (value.search(regEx) === -1) {
+    return false;
+  }
+  return true;
+}
+
+/**
 * list of known encoding,
 * encoding should be a function that takes a `string` input,
 * and return a `Buffer` result
@@ -94,6 +107,9 @@ const encodes = {
   },
   ipnsdns: (value) => {
     const multihash = multiH.encode(Buffer.from(value, 'utf8'), 'identity');
+    if (!isDomainIPNS(value)) {
+      throw Error('ipns-ns only supports valid domains of the form {name}.{topLevelDomain}')
+    }
     return new CID(1, 'dag-pb', multihash).bytes;
   },
   /**

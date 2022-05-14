@@ -93,7 +93,7 @@ module.exports = {
 		const encodedValue = profile.encode(value);
 		if (codec === 'ipns-dns') {
 			codec = 'ipns-ns';
-		};
+		}
 		return multiH.toHexString(multiC.addPrefix(codec, encodedValue))
 	},
 
