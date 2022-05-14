@@ -19,7 +19,6 @@
 const multiC = require('multicodec');
 const multiH = require('multihashes');
 
-
 const { hexStringToBuffer, profiles } = require('./profiles');
 const { cidForWeb, cidV0ToV1Base32 } = require('./helpers');
 

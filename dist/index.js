@@ -8350,7 +8350,6 @@ exports.cidV0ToV1Base32 = cidV0ToV1Base32;
 const multiC = require('multicodec');
 const multiH = require('multihashes');
 
-
 const { hexStringToBuffer, profiles } = require('./profiles');
 const { cidForWeb, cidV0ToV1Base32 } = require('./helpers');
 
@@ -8424,7 +8423,7 @@ module.exports = {
 		const encodedValue = profile.encode(value);
 		if (codec === 'ipns-dns') {
 			codec = 'ipns-ns';
-		};
+		}
 		return multiH.toHexString(multiC.addPrefix(codec, encodedValue))
 	},
 
@@ -8458,6 +8457,7 @@ module.exports = {
 	ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 	OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
+
 const CID = require('cids');
 const multiH = require('multihashes');
 const base64 = require('js-base64')
@@ -8493,6 +8493,7 @@ const isCryptographicIPNS =  (cid) => {
       // and we should not see anything shorter than that
       if (mh.name === 'identity' && mh.length < 36) {
         // One can read inlined string value via:
+        // console.log('ipns-ns id:', String(multiH.decode(new CID(value).multihash).digest))
         return false
       }
     }
@@ -8524,6 +8525,13 @@ const encodes = {
   * @param {string} value
   * @return {Buffer}
   */
+  skynet: (value) => {
+    return base64.toUint8Array(value)
+  },
+  /**
+  * @param {string} value
+  * @return {Buffer}
+  */
   swarm: (value) => {
     const multihash = multiH.encode(hexStringToBuffer(value), 'keccak-256');
 		return new CID(1, 'swarm-manifest', multihash).bytes;
@@ -8546,7 +8554,7 @@ const encodes = {
     }
     // Represent IPNS name as a CID with libp2p-key codec
     // https://github.com/libp2p/specs/blob/master/RFC/0001-text-peerid-cid.md
-    return new CID(1, 'libp2p-key', cid.multihash).bytes
+    return new CID(1, 'libp2p-key', cid.multihash).bytes;
   },
   ipnsdns: (value) => {
     const multihash = multiH.encode(Buffer.from(value, 'utf8'), 'identity');
@@ -8554,13 +8562,6 @@ const encodes = {
       throw Error('ipns-ns only supports valid domains of the form {name}.{topLevelDomain}')
     }
     return new CID(1, 'dag-pb', multihash).bytes;
-  },
-  /**
-  * @param {string} value
-  * @return {Buffer}
-  */
-  base64: (value) => {
-    return base64.toUint8Array(value)
   },
   /**
   * @param {string} value
@@ -8610,7 +8611,7 @@ const decodes = {
         // TODO: start throwing an error (after some deprecation period)
         // throw Error('ipns-ns allows only valid cryptographic libp2p-key identifiers, try using ED25519 pubkey instead')
     }
-    return new CID(1, 'libp2p-key', cid.multihash).bytes
+    return cid.toString('base36');
   },
   /**
   * @param {Buffer} value 
@@ -8631,7 +8632,7 @@ const decodes = {
 */
 const profiles = {
   'skynet-ns': {
-    encode: encodes.base64,
+    encode: encodes.skynet,
     decode: decodes.base64,
   },
   'swarm-ns': {
